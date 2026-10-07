@@ -1,0 +1,214 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with role, factory assignment, and access status",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique user ID or UID"
+        },
+        "username": {
+          "type": "string",
+          "description": "Login username"
+        },
+        "fullName": {
+          "type": "string",
+          "description": "Full display name"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin", "supervisor", "manager", "operator", "viewer"],
+          "description": "User access level"
+        },
+        "factory": {
+          "type": "string",
+          "description": "Assigned factory branch or ALL"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "pending", "suspended"],
+          "description": "Account approval status"
+        },
+        "email": {
+          "type": "string",
+          "description": "User Google email address"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["id", "username", "role", "factory", "status"]
+    },
+    "DowntimeLog": {
+      "title": "DowntimeLog",
+      "description": "Recorded factory line downtime event",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique downtime record identifier"
+        },
+        "entryId": {
+          "type": "string",
+          "description": "Foreign key to production shift log"
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of incident"
+        },
+        "factory": {
+          "type": "string",
+          "description": "Factory name"
+        },
+        "line": {
+          "type": "string",
+          "description": "Sewing or production line"
+        },
+        "supervisor": {
+          "type": "string",
+          "description": "Line supervisor on duty"
+        },
+        "category": {
+          "type": "string",
+          "description": "Downtime category (e.g., Mechanical, Quality, Material)"
+        },
+        "reasonCode": {
+          "type": "string",
+          "description": "Standard code identifier"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Description of downtime reason"
+        },
+        "minutes": {
+          "type": "number",
+          "description": "Duration in minutes"
+        },
+        "remarks": {
+          "type": "string",
+          "description": "Additional operator remarks"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when logged"
+        }
+      },
+      "required": ["id", "date", "factory", "line", "minutes"]
+    },
+    "DailyProduction": {
+      "title": "DailyProduction",
+      "description": "Aggregate daily production numbers per factory and product",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Document key (e.g. date_factory_product)"
+        },
+        "date": {
+          "type": "string",
+          "description": "Date YYYY-MM-DD"
+        },
+        "factory": {
+          "type": "string",
+          "description": "Factory name"
+        },
+        "product": {
+          "type": "string",
+          "description": "Product type or category"
+        },
+        "plannedQty": {
+          "type": "number",
+          "description": "Planned production units"
+        },
+        "actualQty": {
+          "type": "number",
+          "description": "Actual produced units"
+        },
+        "qtyVariance": {
+          "type": "number",
+          "description": "Difference between actual and planned"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last update timestamp"
+        }
+      },
+      "required": ["date", "factory", "product", "plannedQty", "actualQty"]
+    },
+    "AppConfig": {
+      "title": "AppConfig",
+      "description": "System-wide integration configurations",
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Config key identifier"
+        },
+        "value": {
+          "type": "string",
+          "description": "Config value or payload"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last update timestamp"
+        }
+      },
+      "required": ["key"]
+    },
+    "ProductionLog": {
+      "title": "ProductionLog",
+      "description": "Master 22-column daily production shift entry",
+      "type": "object",
+      "properties": {
+        "Entry_ID": { "type": "string", "description": "Unique alphanumeric entry ID" },
+        "Timestamp": { "type": "string", "description": "Submission timestamp" },
+        "Date": { "type": "string", "description": "Production date YYYY-MM-DD" },
+        "Factory": { "type": "string", "description": "Factory plant name" },
+        "Line": { "type": "string", "description": "Line number" },
+        "Line_No": { "type": "string", "description": "Line code identifier" },
+        "Supervisor": { "type": "string", "description": "Line supervisor on duty" },
+        "Style": { "type": "string", "description": "Garment style code" },
+        "Product": { "type": "string", "description": "Product category" },
+        "Brand": { "type": "string", "description": "Brand customer" },
+        "SMV": { "type": "number", "description": "Standard Minute Value" },
+        "Planned_QTY": { "type": "number", "description": "Planned production target units" },
+        "Actual_QTY": { "type": "number", "description": "Actual produced units" },
+        "Produced_Minutes": { "type": "number", "description": "Produced work minutes" },
+        "Plan_TMs": { "type": "number", "description": "Planned workforce TMs" },
+        "Actual_TMs": { "type": "number", "description": "Actual present workforce TMs" },
+        "Present_TMs": { "type": "number", "description": "Attending workforce TMs" },
+        "Hours_Worked": { "type": "number", "description": "Shift duration hours" },
+        "Worked_Minutes": { "type": "number", "description": "Total available worked minutes" },
+        "Down_Time": { "type": "number", "description": "Total line downtime minutes" },
+        "Remarks": { "type": "string", "description": "Operator shift remarks" },
+        "User": { "type": "string", "description": "Submitting operator username" }
+      },
+      "required": ["Entry_ID", "Date", "Factory", "Line", "Style", "Product"]
+    }
+  },
+  "firestore": {
+    "/productionLogs/{logId}": {
+      "schema": "ProductionLog",
+      "description": "Master 22-column shift production records"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profiles and permissions for Ebony Holdings staff"
+    },
+    "/downtimeLogs/{logId}": {
+      "schema": "DowntimeLog",
+      "description": "Production line downtime event logs"
+    },
+    "/dailyProduction/{recordId}": {
+      "schema": "DailyProduction",
+      "description": "Daily planned vs actual production figures"
+    },
+    "/appConfig/{configKey}": {
+      "schema": "AppConfig",
+      "description": "System settings such as Google Sheet endpoints"
+    }
+  }
+}

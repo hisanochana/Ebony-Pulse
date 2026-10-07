@@ -1,0 +1,8 @@
+{
+  "name": "Remix Ebony Pulse",
+  "description": "Apparel manufacturing production logging portal with factory-locked authentication, automatic proportional hours calculations, and executive intelligence dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

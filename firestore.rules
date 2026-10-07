@@ -1,0 +1,157 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Catch-all Deny Rule (Pillar 1)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Security Primitives and Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider == 'password');
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'hisanochana@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    // Validation Functions
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['id', 'username', 'role', 'factory', 'status']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.username is string && data.username.size() >= 2 && data.username.size() <= 50 &&
+        data.role in ['admin', 'supervisor', 'manager', 'operator', 'viewer'] &&
+        data.factory is string && data.factory.size() <= 50 &&
+        data.status in ['active', 'pending', 'suspended'] &&
+        (!('email' in data) || (data.email is string && data.email.size() <= 120)) &&
+        (!('fullName' in data) || (data.fullName is string && data.fullName.size() <= 100));
+    }
+
+    function isValidDowntimeLog(data) {
+      return data.keys().hasAll(['id', 'date', 'factory', 'line', 'minutes']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.date is string && data.date.size() <= 30 &&
+        data.factory is string && data.factory.size() <= 50 &&
+        data.line is string && data.line.size() <= 50 &&
+        data.minutes is number && data.minutes >= 0 && data.minutes <= 1440 &&
+        (!('category' in data) || (data.category is string && data.category.size() <= 100)) &&
+        (!('reasonCode' in data) || (data.reasonCode is string && data.reasonCode.size() <= 50)) &&
+        (!('reason' in data) || (data.reason is string && data.reason.size() <= 500)) &&
+        (!('remarks' in data) || (data.remarks is string && data.remarks.size() <= 1000));
+    }
+
+    function isValidDailyProduction(data) {
+      return data.keys().hasAll(['date', 'factory', 'product', 'plannedQty', 'actualQty']) &&
+        data.date is string && data.date.size() <= 30 &&
+        data.factory is string && data.factory.size() <= 50 &&
+        data.product is string && data.product.size() <= 100 &&
+        data.plannedQty is number && data.plannedQty >= 0 &&
+        data.actualQty is number && data.actualQty >= 0;
+    }
+
+    function isValidAppConfig(data) {
+      return data.keys().hasAll(['key']) &&
+        data.key is string && data.key.size() <= 100 &&
+        (!('value' in data) || (data.value is string && data.value.size() <= 10000));
+    }
+
+    function isValidProductionLog(data) {
+      return data.keys().hasAll(['Entry_ID', 'Date', 'Factory', 'Line', 'Style', 'Product']) &&
+        data.Entry_ID is string && data.Entry_ID.size() <= 128 &&
+        data.Date is string && data.Date.size() <= 30 &&
+        data.Factory is string && data.Factory.size() <= 50 &&
+        data.Line is string && data.Line.size() <= 50 &&
+        data.Style is string && data.Style.size() <= 100 &&
+        data.Product is string && data.Product.size() <= 100 &&
+        (!('Planned_QTY' in data) || (data.Planned_QTY is number && data.Planned_QTY >= 0)) &&
+        (!('Actual_QTY' in data) || (data.Actual_QTY is number && data.Actual_QTY >= 0)) &&
+        (!('Produced_Minutes' in data) || (data.Produced_Minutes is number && data.Produced_Minutes >= 0)) &&
+        (!('Worked_Minutes' in data) || (data.Worked_Minutes is number && data.Worked_Minutes >= 0)) &&
+        (!('Down_Time' in data) || (data.Down_Time is number && data.Down_Time >= 0)) &&
+        (!('SMV' in data) || (data.SMV is number && data.SMV >= 0)) &&
+        (!('Hours_Worked' in data) || (data.Hours_Worked is number && data.Hours_Worked >= 0)) &&
+        (!('Plan_TMs' in data) || (data.Plan_TMs is number && data.Plan_TMs >= 0)) &&
+        (!('Actual_TMs' in data) || (data.Actual_TMs is number && data.Actual_TMs >= 0)) &&
+        (!('Present_TMs' in data) || (data.Present_TMs is number && data.Present_TMs >= 0)) &&
+        (!('Remarks' in data) || (data.Remarks is string && data.Remarks.size() <= 2000)) &&
+        (!('Supervisor' in data) || (data.Supervisor is string && data.Supervisor.size() <= 100)) &&
+        (!('Brand' in data) || (data.Brand is string && data.Brand.size() <= 100)) &&
+        (!('Line_No' in data) || (data.Line_No is string && data.Line_No.size() <= 50)) &&
+        (!('User' in data) || (data.User is string && data.User.size() <= 100));
+    }
+
+    // Match collections
+    match /productionLogs/{logId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(logId) && isValidProductionLog(incoming());
+      allow update: if isSignedIn() && isValidId(logId) && isValidProductionLog(incoming());
+      allow delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(userId) && isValidUserProfile(incoming()) && (
+        isAdmin() || (
+          request.auth.uid == userId &&
+          incoming().role != 'admin' &&
+          incoming().status == 'pending'
+        )
+      );
+      allow update: if isSignedIn() && isValidId(userId) && isValidUserProfile(incoming()) && (
+        isAdmin() || (
+          request.auth.uid == userId &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'picture', 'username'])
+        )
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /downtimeLogs/{logId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(logId) && isValidDowntimeLog(incoming());
+      allow update: if isSignedIn() && isValidId(logId) && isValidDowntimeLog(incoming()) && (
+        isAdmin() || incoming().diff(existing()).affectedKeys().hasOnly(['minutes', 'reason', 'remarks', 'category', 'reasonCode'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /dailyProduction/{recordId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isSignedIn() && isValidId(recordId) && isValidDailyProduction(incoming());
+      allow delete: if isAdmin();
+    }
+
+    match /appConfig/{configKey} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdmin() && isValidId(configKey) && isValidAppConfig(incoming());
+    }
+
+    // Connection testing endpoint for health check
+    match /test/{docId} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

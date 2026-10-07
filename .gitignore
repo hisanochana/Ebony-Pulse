@@ -1,0 +1,29 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Sensitive Credentials & Passwords
+passwords.json
+users.json
+*.pem
+*.key
+*.cert
+
+# Live Configuration & Private Storage Data
+sheet-config.json
+sheet-logs-cache.json
+downtime-logs.json
+daily-production-db.json
+change-requests.json
+*.db
+*.sqlite
+
+# Service Accounts & Keys
+*credentials*.json
+*service-account*.json
+.firebase/
